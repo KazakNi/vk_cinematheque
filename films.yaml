@@ -1,0 +1,427 @@
+openapi: 3.0.3
+info:
+  title: Swagger FilmStore - OpenAPI 3.0
+  description: |-
+    This is a sample Film Store API Service based on the OpenAPI 3.0 specification. 
+  contact:
+    email: kazakov.ni@yandex.ru
+  version: 1.0.1
+servers:
+  - url: localhost:8080
+paths:
+  /films/{id}:
+    put:
+      tags:
+        - film
+      summary: Update an existing film
+      description: Update an existing film by Id
+      operationId: editFilm
+      requestBody:
+        description: Update an existent film in the database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilmUpdate'
+        required: true
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the film to update
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful emendation
+        '400':
+          description: Invalid ID or body request supplied
+        '403':
+          description: Unauthorized
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Not found
+        
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - film
+      summary: Delete a film
+      operationId: deleteFilm
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the film to update
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful deletion
+        '404':
+          description: Not found
+        '403':
+          description: Unauthorized
+        '401':
+          description: Unauthenticated  
+      security:
+        - bearerAuth: []   
+        
+  /films:          
+    post:
+      tags:
+        - film
+      summary: Add a new film to the database
+      description: Add a new movie to the database
+      operationId: addFilm
+      requestBody:
+        description: Create a new movie in the database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilmUpdate'
+        required: true
+      responses:
+        '201':
+          description: Sucessful creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilmID'          
+        '400':
+          description: Invalid input
+        '403':
+          description: Unauthorized
+        '401':
+          description: Unauthenticated
+      security:
+        - bearerAuth: []
+    get:
+      tags:
+        - film
+      summary: Get a movie list
+      description: Listing all  movies
+      operationId: getListFilms
+      parameters:
+        - name: sort
+          in: query
+          description: sorting by name, date or rating
+          required: false
+          schema:
+            type: string
+            enum:
+              - name
+              - date
+              - rating
+        - name: search_by_movieName
+          in: query
+          description: search a movie by name
+          required: false
+          schema:
+            type: string
+        - name: search_by_actorName
+          in: query
+          description: search a movie by actor's name
+          required: false
+          schema:
+            type: string    
+      responses:
+        '200':
+          description: Sucessful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Film'          
+        '401':
+          description: Unauthenticated
+      security:
+        - bearerAuth: []
+
+  /actors:
+    get:
+      tags:
+        - actor
+      summary: Get all actors
+      description: List of actors
+      operationId: getListActors
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActorsList'
+        '401':
+          description: Unauthenticated
+      security:
+       - bearerAuth: []
+    post:
+      tags:
+        - actor
+      summary: Create an actor
+      description: Creates an actor in database
+      operationId: createActor
+      requestBody:
+        description: Create a new actor in the database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Actor'
+        required: true
+      responses:
+        '201':
+          description: Sucessful creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActorsID'          
+        '400':
+          description: Invalid input
+        '403':
+          description: Unauthorized
+        '401':
+          description: Unauthenticated
+      security:
+        - bearerAuth: []
+  /actors/{id}:
+    put:
+      tags:
+        - actor
+      summary: Update an existing actor
+      description: Update an existing actor by Id
+      operationId: editActor
+      requestBody:
+        description: Update an existent actor in the database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Actor'
+        required: true
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the film to update
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful emendation
+        '400':
+          description: Invalid ID or body request supplied
+        '403':
+          description: Unauthorized
+        '401':
+          description: Unauthenticated
+        '404':
+          description: Not found
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - actor
+      summary: Delete an actor
+      operationId: deleteActor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the film to update
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successful deletion
+        '404':
+          description: Not found
+        '403':
+          description: Unauthorized
+        '401':
+          description: Unauthenticated  
+      security:
+        - bearerAuth: []    
+  /user:
+    post:
+      tags:
+        - user
+      summary: Create user
+      description: This can only be done by the logged in user.
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserID'
+  /user/login:
+    post:
+      tags:
+        - user
+      summary: Logs user into the system
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+               $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Bearer Token для дальнейшей аутентификации
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        '400':
+          description: Invalid username/password supplied
+        '409':
+          description: User already exists  
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: asf1wfdf31
+    FilmUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        name:
+          type: string
+          example: Lost
+        description:
+          type: string
+          example: Lost is an American science fiction adventure drama
+        release_date:
+          description: date of release
+          type: string
+          example: 2004-01-12
+        rating:
+          description: Film ranking
+          type: integer
+          example: 8
+        actors_list:
+          type: array
+          example: [2, 3, 4, 5]
+          items:
+            type: integer
+    Film:
+      required:
+        - name
+        - description
+        - release_date
+        - rating
+        - actors_list
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        name:
+          type: string
+          example: Lost
+        description:
+          type: string
+          example: Lost is an American science fiction adventure drama
+        release_date:
+          description: date of release
+          type: string
+          example: 2004-01-12
+        rating:
+          description: Film ranking
+          type: integer
+          example: 8
+        actors_list:
+          type: array
+          example: ["John", "Ramsey"]
+          items:
+            type: string 
+    Actor:
+      required:
+        - name
+        - sex
+        - birth_date
+      type: object
+      properties:
+        name:  
+          type: string
+          example: Johnny Depp
+        sex:
+          type: string
+          enum:
+            - male
+            - female
+        birth_date:
+          type: string
+          example: "1963-09-06"
+    ActorsList:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Actor'
+      properties:
+        actors_films:
+          type: array
+          example: ["Lost", "Alone"]
+          items:
+            type: string
+    ActorsID:
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+    UserID:
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10      
+    FilmID:
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10      
+  securitySchemes:
+    bearerAuth:            
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
