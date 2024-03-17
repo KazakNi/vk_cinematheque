@@ -3,30 +3,25 @@ package api
 import (
 	"cinematheque/internal/db"
 	"encoding/json"
+	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
 )
 
-func CheckRBody(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Body == http.NoBody {
-			http.Error(w, "Please send a request body", 400)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func SignUp(w http.ResponseWriter, r *http.Request) {
 	user := &User{}
-	err := json.NewDecoder(r.Body).Decode(user)
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	err := d.Decode(user)
 	if err != nil {
 		log.Printf("Error while %s endpoint response body parsing: %s", r.URL, err)
 	}
@@ -47,12 +42,12 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	userId, err := user.CreateUser(db.DBConnection)
 
 	if err != nil {
-		log.Printf("Error while creating user: %s", err)
+		log.Printf("Error while creating an user: %s", err)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	resp, err := json.Marshal(UserId{Id: userId})
+	resp, err := json.Marshal(CreatedId{Id: userId})
 	if err != nil {
 		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
 		return
@@ -69,7 +64,7 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	db_user, err := user.GetUserByEmail(user.Email, db.DBConnection)
-
+	fmt.Println("Get token and  status:", db_user)
 	if err != nil {
 		log.Printf("Error while user querying: %s", err)
 	}
@@ -89,6 +84,7 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 	}
 	is_admin := db_user.Is_admin
 	claims := CustomClaims{is_admin, jwt.RegisteredClaims{ID: strconv.Itoa(db_user.Id), ExpiresAt: jwt.NewNumericDate(time.Now().Add(72 * time.Hour))}}
+
 	SetToken(w, r, claims)
 
 }
@@ -128,4 +124,213 @@ func load_secret() string {
 		panic("Error loading .env file")
 	}
 	return os.Getenv("TOKEN_SECRET")
+}
+
+func ReDoc(w http.ResponseWriter, r *http.Request) {
+
+	tmpl, err := template.ParseFiles("../api/static/redoc.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tmpl.Execute(w, nil)
+}
+
+func CreateActor(w http.ResponseWriter, r *http.Request) {
+	actor := &Actor{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	err := d.Decode(actor)
+	if err != nil {
+		log.Printf("Error while %s endpoint response body parsing: %s", r.URL, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	actor_id, err := actor.Create(db.DBConnection)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while creating an actor: %s", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	resp, err := json.Marshal(CreatedId{Id: actor_id})
+
+	if err != nil {
+		log.Printf("Error happened in JSON marshal. Err: %s", err)
+		return
+	}
+	w.Write(resp)
+
+}
+
+func DeleteActor(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/actors/"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Undefined id request Err: %s", err)
+		return
+	}
+	var actor Actor
+	actor, err = actor.GetActorById(id, db.DBConnection)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Print(err)
+		return
+	}
+	err = actor.Delete(id, db.DBConnection)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while delete actor operation: %s", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func UpdateActor(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/actors/"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Undefined id request Err: %s", err)
+		return
+	}
+
+	actor := &Actor{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	err = d.Decode(actor)
+
+	if err != nil {
+		log.Printf("Error while %s endpoint response body parsing: %s", r.URL, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	_, err = actor.GetActorById(id, db.DBConnection)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Print(err)
+		return
+	}
+
+	err = actor.Update(id, db.DBConnection)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while update actor operation: %s", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func CreateFilm(w http.ResponseWriter, r *http.Request) {
+	film := &PostFilm{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	err := d.Decode(film)
+
+	if err != nil {
+		log.Printf("Error while %s endpoint response body parsing: %s", r.URL, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	var f = Film{Name: film.Name,
+		Description:  film.Description,
+		Release_date: film.Release_date,
+		Rating:       film.Rating}
+
+	film_id, err := f.Create(db.DBConnection)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while creating an actor: %s", err)
+		return
+	}
+
+	err = f.InsertCast(film_id, film.Actors_list, db.DBConnection)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while inserting actors: %s", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	resp, err := json.Marshal(CreatedId{Id: film_id})
+
+	if err != nil {
+		log.Printf("Error happened in JSON marshal. Err: %s", err)
+		return
+	}
+	w.Write(resp)
+
+}
+
+func DeleteFilm(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/films/"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Undefined id request Err: %s", err)
+		return
+	}
+	var film Film
+	film, err = film.GetFilmById(id, db.DBConnection)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Print(err)
+		return
+	}
+	err = film.Delete(id, db.DBConnection)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while delete actor operation: %s", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func UpdateFilm(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/films/"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Undefined id request Err: %s", err)
+		return
+	}
+
+	film := &PostFilm{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	err = d.Decode(film)
+
+	if err != nil {
+		log.Printf("Error while %s endpoint response body parsing: %s", r.URL, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var f = Film{Name: film.Name,
+		Description:  film.Description,
+		Release_date: film.Release_date,
+		Rating:       film.Rating}
+
+	_, err = f.GetFilmById(id, db.DBConnection)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Print(err)
+		return
+	}
+
+	err = f.Update(id, film.Actors_list, db.DBConnection)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while update actor operation: %s", err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

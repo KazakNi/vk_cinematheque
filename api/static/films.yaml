@@ -1,8 +1,9 @@
 openapi: 3.0.3
 info:
   title: Swagger FilmStore - OpenAPI 3.0
-  description: |-
-    This is a sample Film Store API Service based on the OpenAPI 3.0 specification. 
+  description: >-
+    This is a sample Film Store API Service based on the OpenAPI 3.0
+    specification. 
   contact:
     email: kazakov.ni@yandex.ru
   version: 1.0.1
@@ -35,13 +36,12 @@ paths:
           description: Successful emendation
         '400':
           description: Invalid ID or body request supplied
-        '403':
-          description: Unauthorized
         '401':
           description: Unauthenticated
+        '403':
+          description: Unauthorized
         '404':
           description: Not found
-        
       security:
         - bearerAuth: []
     delete:
@@ -59,16 +59,15 @@ paths:
       responses:
         '204':
           description: Successful deletion
-        '404':
-          description: Not found
+        '401':
+          description: Unauthenticated
         '403':
           description: Unauthorized
-        '401':
-          description: Unauthenticated  
+        '404':
+          description: Not found
       security:
-        - bearerAuth: []   
-        
-  /films:          
+        - bearerAuth: []
+  /films:
     post:
       tags:
         - film
@@ -88,13 +87,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FilmID'          
+                $ref: '#/components/schemas/FilmID'
         '400':
           description: Invalid input
-        '403':
-          description: Unauthorized
         '401':
           description: Unauthenticated
+        '403':
+          description: Unauthorized
       security:
         - bearerAuth: []
     get:
@@ -125,7 +124,7 @@ paths:
           description: search a movie by actor's name
           required: false
           schema:
-            type: string    
+            type: string
       responses:
         '200':
           description: Sucessful operation
@@ -134,12 +133,11 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Film'          
+                  $ref: '#/components/schemas/Film'
         '401':
           description: Unauthenticated
       security:
         - bearerAuth: []
-
   /actors:
     get:
       tags:
@@ -159,7 +157,7 @@ paths:
         '401':
           description: Unauthenticated
       security:
-       - bearerAuth: []
+        - bearerAuth: []
     post:
       tags:
         - actor
@@ -179,13 +177,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ActorsID'          
+                $ref: '#/components/schemas/ActorsID'
         '400':
           description: Invalid input
-        '403':
-          description: Unauthorized
         '401':
           description: Unauthenticated
+        '403':
+          description: Unauthorized
       security:
         - bearerAuth: []
   /actors/{id}:
@@ -214,10 +212,10 @@ paths:
           description: Successful emendation
         '400':
           description: Invalid ID or body request supplied
-        '403':
-          description: Unauthorized
         '401':
           description: Unauthenticated
+        '403':
+          description: Unauthorized
         '404':
           description: Not found
       security:
@@ -237,14 +235,14 @@ paths:
       responses:
         '204':
           description: Successful deletion
-        '404':
-          description: Not found
+        '401':
+          description: Unauthenticated
         '403':
           description: Unauthorized
-        '401':
-          description: Unauthenticated  
+        '404':
+          description: Not found
       security:
-        - bearerAuth: []    
+        - bearerAuth: []
   /user:
     post:
       tags:
@@ -265,6 +263,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserID'
+        '400':
+          description: Invalid input data
   /user/login:
     post:
       tags:
@@ -276,7 +276,7 @@ paths:
         content:
           application/json:
             schema:
-               $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/User'
       responses:
         '200':
           description: Успешная аутентификация
@@ -289,10 +289,10 @@ paths:
                     type: string
                     description: Bearer Token для дальнейшей аутентификации
                     example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
-        '400':
+        '401':
           description: Invalid username/password supplied
         '409':
-          description: User already exists  
+          description: User already exists
 components:
   schemas:
     User:
@@ -310,10 +310,6 @@ components:
     FilmUpdate:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
         name:
           type: string
           example: Lost
@@ -329,8 +325,13 @@ components:
           type: integer
           example: 8
         actors_list:
+          description: list of actos' id
           type: array
-          example: [2, 3, 4, 5]
+          example:
+            - 2
+            - 3
+            - 4
+            - 5
           items:
             type: integer
     Film:
@@ -355,16 +356,18 @@ components:
         release_date:
           description: date of release
           type: string
-          example: 2004-01-12
+          example: 2006-01-02T15:04:05Z0
         rating:
           description: Film ranking
           type: integer
           example: 8
         actors_list:
           type: array
-          example: ["John", "Ramsey"]
+          example:
+            - John
+            - Ramsey
           items:
-            type: string 
+            type: string
     Actor:
       required:
         - name
@@ -372,7 +375,7 @@ components:
         - birth_date
       type: object
       properties:
-        name:  
+        name:
           type: string
           example: Johnny Depp
         sex:
@@ -382,7 +385,7 @@ components:
             - female
         birth_date:
           type: string
-          example: "1963-09-06"
+          example: '1963-09-06'
     ActorsList:
       type: object
       allOf:
@@ -390,7 +393,9 @@ components:
       properties:
         actors_films:
           type: array
-          example: ["Lost", "Alone"]
+          example:
+            - Lost
+            - Alone
           items:
             type: string
     ActorsID:
@@ -410,7 +415,7 @@ components:
         id:
           type: integer
           format: int64
-          example: 10      
+          example: 10
     FilmID:
       required:
         - id
@@ -419,9 +424,9 @@ components:
         id:
           type: integer
           format: int64
-          example: 10      
+          example: 10
   securitySchemes:
-    bearerAuth:            
+    bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
