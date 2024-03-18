@@ -12,7 +12,7 @@ func SetRoutes() {
 	signUpHandler := http.HandlerFunc(SignUp)
 	loginHandler := http.HandlerFunc(SignIn)
 
-	getActorsHanlder := http.HandlerFunc(GetListActors)
+	GetActorsHandler := http.HandlerFunc(GetListActors)
 	createActorHanlder := http.HandlerFunc(CreateActor)
 	deleteActorHandler := http.HandlerFunc(DeleteActor)
 	putActorHandler := http.HandlerFunc(UpdateActor)
@@ -34,7 +34,7 @@ func SetRoutes() {
 	mux.Handle("DELETE /films/{id}", LogRequest(AuthRequiredCheck(IsAdminCheck(deleteFilmHandler))))
 	mux.Handle("PUT /films/{id}", LogRequest(AuthRequiredCheck(IsAdminCheck(putFilmHandler))))
 
-	mux.Handle("GET /actors", LogRequest(AuthRequiredCheck(getActorsHanlder)))
+	mux.Handle("GET /actors", LogRequest(AuthRequiredCheck(GetActorsHandler)))
 	mux.Handle("POST /actors", LogRequest(AuthRequiredCheck(IsAdminCheck(createActorHanlder))))
 	mux.Handle("DELETE /actors/{id}", LogRequest(AuthRequiredCheck(IsAdminCheck(deleteActorHandler))))
 	mux.Handle("PUT /actors/{id}", LogRequest(AuthRequiredCheck(IsAdminCheck(putActorHandler))))

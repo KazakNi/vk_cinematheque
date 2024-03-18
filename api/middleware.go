@@ -18,6 +18,7 @@ func AuthRequiredCheck(next http.Handler) http.Handler {
 
 		if len(AuthHeader) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Error"))
 			return
 		}
 
@@ -127,7 +128,7 @@ func LogRequest(next http.Handler) http.Handler {
 			rww := NewResponseWriterWrapper(w)
 			log.Println(
 				fmt.Sprintf(
-					"[Request: %s] [Response: %s]",
+					"[Request: %v] [Response: %s]",
 					r, rww.String(),
 				))
 		}()
