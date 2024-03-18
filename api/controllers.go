@@ -3,7 +3,6 @@ package api
 import (
 	"cinematheque/internal/db"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -64,7 +63,6 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	db_user, err := user.GetUserByEmail(user.Email, db.DBConnection)
-	fmt.Println("Get token and  status:", db_user)
 	if err != nil {
 		log.Printf("Error while user querying: %s", err)
 	}
@@ -133,6 +131,19 @@ func ReDoc(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	tmpl.Execute(w, nil)
+}
+
+func GetListActors(w http.ResponseWriter, r *http.Request) {
+	var a Actors
+	actors := []Actors{}
+	actors, err := a.GetListActors(db.DBConnection)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while extracting films list: %s", err)
+		return
+	}
+	b, _ := json.Marshal(actors)
+	w.Write(b)
 }
 
 func CreateActor(w http.ResponseWriter, r *http.Request) {
@@ -248,7 +259,7 @@ func CreateFilm(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		log.Printf("Error while creating an actor: %s", err)
+		log.Printf("Error while creating an film: %s", err)
 		return
 	}
 
@@ -333,4 +344,21 @@ func UpdateFilm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func GetListFilms(w http.ResponseWriter, r *http.Request) {
+	sort_param := r.URL.Query().Get("sort")
+	searchByFilmParam := r.URL.Query().Get("search_by_movieName")
+	searchByActorParam := r.URL.Query().Get("search_by_actorName")
+
+	var f Films
+	films := []Films{}
+	films, err := f.GetListFilms(db.DBConnection, sort_param, searchByFilmParam, searchByActorParam)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Printf("Error while extracting films list: %s", err)
+		return
+	}
+	b, _ := json.Marshal(films)
+	w.Write(b)
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"cinematheque/internal/db"
+	DB "cinematheque/internal/db"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -75,33 +77,97 @@ func (user *User) CheckPassword(providedPassword string, db_password string) err
 	return nil
 }
 
-type CreatedId struct {
-	Id int `json:"id" db:"id"`
+type Actors struct {
+	Name        string         `json:"name" db:"name"`
+	Sex         string         `json:"sex" db:"sex"`
+	Birth_date  BirthDate      `json:"birth_date" db:"birth_date"`
+	Actor_films pq.StringArray `json:"actor_films" db:"actor_films"`
 }
 
-type CustomClaims struct {
-	Is_admin bool `json:"is_admin"`
-	jwt.RegisteredClaims
+func (a *Actors) GetListActors(db *sqlx.DB) ([]Actors, error) {
+	actors := []Actors{}
+
+	err := db.Select(&actors, DB.GetListActorsStmt)
+	if err != nil {
+		return actors, err
+	} else {
+		return actors, nil
+	}
 }
 
-type PostFilm struct {
-	Name         string    `json:"name" db:"name"`
-	Description  string    `json:"description" db:"description"`
-	Release_date time.Time `json:"release_date" db:"release_date"`
-	Rating       int       `json:"rating" db:"rating"`
-	Actors_list  []int     `json:"actors_list"` // actors ids for MtM relation support
+type Films struct {
+	Name         string         `json:"name" db:"name"`
+	Description  string         `json:"description" db:"description"`
+	Release_date BirthDate      `json:"release_date" db:"release_date"`
+	Rating       int            `json:"rating" db:"rating"`
+	Actors_list  pq.StringArray `json:"actors_list" db:"actors_list"`
+}
+
+func (f *Films) GetListFilms(db *sqlx.DB, sort, searchByMovie, searchByActor string) ([]Films, error) {
+	films := []Films{}
+	if sort != "" {
+		switch sort {
+		case "name":
+			err := db.Select(&films, DB.GetListMoviesSortByNameStmt)
+			if err != nil {
+				return films, err
+			}
+		case "date":
+			err := db.Select(&films, DB.GetListMoviesSortByDateStmt)
+			if err != nil {
+				return films, err
+			}
+		case "rating":
+			err := db.Select(&films, DB.GetListMoviesSortByRatingStmt)
+			if err != nil {
+				return films, err
+			}
+		default:
+			err := db.Select(&films, DB.GetListMovieStmt)
+			if err != nil {
+				return films, err
+			}
+		}
+	}
+
+	if searchByActor != "" {
+		err := db.Select(&films, DB.GetListMoviesSearchByActorStmt, searchByActor)
+		if err != nil {
+			return films, err
+		} else {
+			return films, nil
+		}
+
+	}
+
+	if searchByMovie != "" {
+
+		err := db.Select(&films, DB.GetListMoviesSearchByMovieStmt, searchByMovie)
+		if err != nil {
+			return films, err
+		} else {
+			return films, nil
+		}
+	}
+
+	err := db.Select(&films, fmt.Sprintf("%s", DB.GetListMovieStmt))
+	if err != nil {
+		return films, err
+	} else {
+		return films, nil
+	}
 }
 
 type Film struct {
 	Name         string    `json:"name" db:"name"`
 	Description  string    `json:"description" db:"description"`
-	Release_date time.Time `json:"release_date" db:"release_date"`
+	Release_date BirthDate `json:"release_date" db:"release_date"`
 	Rating       int       `json:"rating" db:"rating"`
 }
 
 func (film *Film) Create(db *sqlx.DB) (film_id int, err error) {
 	var id int
-	row := db.QueryRow("INSERT INTO films (name, description, release_date, rating) VALUES ($1, $2, $3, $4) RETURNING id", film.Name, film.Description, film.Release_date, film.Rating)
+	row := db.QueryRow("INSERT INTO films (name, description, release_date, rating) VALUES ($1, $2, $3, $4) RETURNING id", film.Name, film.Description, film.Release_date.Time, film.Rating)
 	err = row.Scan(&id)
 	if err != nil {
 		return -1, err
@@ -244,4 +310,21 @@ func (date *BirthDate) Scan(src interface{}) error {
 
 func (date *BirthDate) MarshalJSON() ([]byte, error) {
 	return json.Marshal(date.Time.Format("2006-01-02"))
+}
+
+type CreatedId struct {
+	Id int `json:"id" db:"id"`
+}
+
+type CustomClaims struct {
+	Is_admin bool `json:"is_admin"`
+	jwt.RegisteredClaims
+}
+
+type PostFilm struct {
+	Name         string    `json:"name" db:"name"`
+	Description  string    `json:"description" db:"description"`
+	Release_date BirthDate `json:"release_date" db:"release_date"`
+	Rating       int       `json:"rating" db:"rating"`
+	Actors_list  []int     `json:"actors_list"` // actors ids for MtM relation support
 }

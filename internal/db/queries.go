@@ -13,6 +13,72 @@ import (
 
 var DBConnection *sqlx.DB
 
+var GetListMovieStmt string = `Select f.name, f.description, f.release_date, f.rating, array_agg(a.name) as actors_list
+FROM films f
+JOIN castfilms cs
+ON cs.film_id = f.id
+JOIN actors a
+ON a.id = cs.actor_id
+GROUP BY f.name, f.description, f.release_date, f.rating
+ORDER BY f.rating DESC`
+
+var GetListMoviesSortByNameStmt string = `Select f.name, f.description, f.release_date, f.rating, array_agg(a.name) as actors_list
+FROM films f
+JOIN castfilms cs
+ON cs.film_id = f.id
+JOIN actors a
+ON a.id = cs.actor_id
+GROUP BY f.name, f.description, f.release_date, f.rating
+ORDER BY f.name ASC`
+
+var GetListMoviesSortByDateStmt string = `Select f.name, f.description, f.release_date, f.rating, array_agg(a.name) as actors_list
+FROM films f
+JOIN castfilms cs
+ON cs.film_id = f.id
+JOIN actors a
+ON a.id = cs.actor_id
+GROUP BY f.name, f.description, f.release_date, f.rating
+ORDER BY f.release_date ASC`
+
+var GetListMoviesSortByRatingStmt string = `Select f.name, f.description, f.release_date, f.rating, array_agg(a.name) as actors_list
+FROM films f
+JOIN castfilms cs
+ON cs.film_id = f.id
+JOIN actors a
+ON a.id = cs.actor_id
+GROUP BY f.name, f.description, f.release_date, f.rating
+ORDER BY f.rating ASC`
+
+var GetListMoviesSearchByActorStmt string = `Select f.name, f.description, f.release_date, f.rating, array_agg(a.name) as actors_list
+FROM films f
+JOIN castfilms cs
+ON cs.film_id = f.id
+JOIN actors a
+ON a.id = cs.actor_id
+WHERE a.name ILIKE '%' || $1 || '%'
+GROUP BY f.name, f.description, f.release_date, f.rating
+ORDER BY f.rating DESC
+`
+
+var GetListMoviesSearchByMovieStmt string = `Select f.name, f.description, f.release_date, f.rating, array_agg(a.name) as actors_list
+FROM films f
+JOIN castfilms cs
+ON cs.film_id = f.id
+JOIN actors a
+ON a.id = cs.actor_id
+WHERE f.name ILIKE '%' || $1 || '%'
+GROUP BY f.name, f.description, f.release_date, f.rating
+ORDER BY f.rating DESC`
+
+var GetListActorsStmt string = `Select a.name, a.sex, a.birth_date, array_agg(f.name) as actor_films
+FROM actors a
+JOIN castfilms cs
+ON cs.actor_id = a.id
+JOIN films f
+ON f.id = cs.film_id
+GROUP BY a.name, a.sex, a.birth_date
+`
+
 func NewDBConnection() (*sqlx.DB, error) {
 	wd, err := os.Getwd()
 	if err != nil {

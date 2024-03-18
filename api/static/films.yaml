@@ -343,10 +343,6 @@ components:
         - actors_list
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-          example: 10
         name:
           type: string
           example: Lost
@@ -391,7 +387,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/Actor'
       properties:
-        actors_films:
+        actor_films:
           type: array
           example:
             - Lost
