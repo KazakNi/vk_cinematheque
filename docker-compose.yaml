@@ -6,8 +6,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - db
-  db:
+      - postgres
+  postgres:
     image: postgres:12-alpine
     environment:
       POSTGRES_PASSWORD: postgres

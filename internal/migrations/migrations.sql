@@ -1,9 +1,10 @@
+DROP TABLE IF EXISTS users, films, actors, castfilms;
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY, 
   email VARCHAR (150) UNIQUE NOT NULL,
   password VARCHAR (200) NOT NULL,
-  is_admin boolean);
-DROP TABLE IF EXISTS films, actors, castfilms;
+  is_admin boolean DEFAULT FALSE);
+
 
 CREATE TABLE films (
   id SERIAL PRIMARY KEY,
@@ -25,3 +26,5 @@ CREATE TABLE castfilms (
   film_id INT NOT NULL REFERENCES films ON DELETE CASCADE,
   UNIQUE(actor_id, film_id)
 );
+
+INSERT INTO users VALUES (0, 'admin@admin.com', 'test', true); 

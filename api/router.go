@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cinematheque/internal/utils"
 	"log"
 	"net/http"
 )
@@ -8,7 +9,6 @@ import (
 func SetRoutes() {
 
 	mux := http.NewServeMux()
-
 	signUpHandler := http.HandlerFunc(SignUp)
 	loginHandler := http.HandlerFunc(SignIn)
 
@@ -23,8 +23,9 @@ func SetRoutes() {
 	getFilmsHandler := http.HandlerFunc(GetListFilms)
 
 	// Swagger specification
+	fileDir := utils.GetStaticRoot()
 	mux.HandleFunc("GET /redoc", ReDoc)
-	mux.Handle("/films.yaml", http.FileServer(http.Dir("../api/static")))
+	mux.Handle("/films.yaml", http.FileServer(http.Dir(fileDir)))
 
 	mux.Handle("POST /user", LogRequest(signUpHandler))
 	mux.Handle("POST /user/login", LogRequest(loginHandler))
@@ -40,6 +41,7 @@ func SetRoutes() {
 	mux.Handle("PUT /actors/{id}", LogRequest(AuthRequiredCheck(IsAdminCheck(putActorHandler))))
 
 	log.Println("Starting server")
+
 	err := http.ListenAndServe(":8080", mux)
 
 	if err != nil {

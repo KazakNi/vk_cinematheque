@@ -45,7 +45,7 @@ func (user *User) IsUserExists(db *sqlx.DB) (exists bool, err error) {
 
 func (user *User) CreateUser(db *sqlx.DB) (user_id int, err error) {
 	var id int
-	row := db.QueryRow("INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id", user.Email, user.Password)
+	row := db.QueryRow("INSERT INTO users (email, password, is_admin) VALUES ($1, $2, $3) RETURNING id", user.Email, user.Password, false)
 	err = row.Scan(&id)
 	if err != nil {
 		log.Printf("error while insert values: %s", err)
@@ -240,6 +240,7 @@ type Actor struct {
 }
 
 func (actor *Actor) Create(db *sqlx.DB) (actor_id int, err error) {
+
 	var id int
 	row := db.QueryRow("INSERT INTO actors (name, sex, birth_date) VALUES ($1, $2, $3) RETURNING id", actor.Name, actor.Sex, actor.Birth_date.Time)
 	err = row.Scan(&id)

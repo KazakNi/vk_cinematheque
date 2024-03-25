@@ -2,12 +2,12 @@ package api
 
 import (
 	"cinematheque/internal/db"
+	"cinematheque/internal/utils"
 	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -23,12 +23,16 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	err := d.Decode(user)
 	if err != nil {
 		log.Printf("Error while %s endpoint response body parsing: %s", r.URL, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	userExists, err := user.IsUserExists(db.DBConnection)
 
 	if err != nil {
 		log.Printf("Error while checking user existence")
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	if userExists {
@@ -42,15 +46,17 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("Error while creating an user: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	resp, err := json.Marshal(CreatedId{Id: userId})
 	if err != nil {
 		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	w.WriteHeader(http.StatusCreated)
 	w.Write(resp)
 }
 
@@ -59,12 +65,16 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(user)
 	if err != nil {
 		log.Printf("Error while %s endpoint response body parsing: %s", r.URL, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 
 	db_user, err := user.GetUserByEmail(user.Email, db.DBConnection)
 	if err != nil {
 		log.Printf("Error while user querying: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	if db_user.Email == "" {
@@ -95,38 +105,37 @@ func SetToken(w http.ResponseWriter, r *http.Request, claims CustomClaims) {
 		w.Write([]byte("401 - Invalid token"))
 	}
 	var bearer = "Bearer " + token_string
-	r.Header.Set("Authorization", bearer)
+	w.Header().Set("Authorization", bearer)
 
 	w.Header().Set("Content-Type", "application/json")
 
-	token_response := make(map[string]string)
-	token_response["token"] = token_string
-	res, err := json.Marshal(token_response)
+	t := make(map[string]string)
+	t["token"] = token_string
+
+	res, err := json.Marshal(t)
 	if err != nil {
 		log.Println("Error while marshalling token")
 
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(res))
+	w.Write(res)
 }
 
 func load_secret() string {
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	parent := filepath.Dir(wd)
 
-	err = godotenv.Load(parent + "./.env")
+	err := godotenv.Load(".env")
 	if err != nil {
-		panic("Error loading .env file")
+		err = godotenv.Load("../example.env")
+		if err != nil {
+			panic("error while loading .env file")
+		}
 	}
 	return os.Getenv("TOKEN_SECRET")
 }
 
 func ReDoc(w http.ResponseWriter, r *http.Request) {
-
-	tmpl, err := template.ParseFiles("../api/static/redoc.html")
+	static_path := utils.GetStaticPath()
+	tmpl, err := template.ParseFiles(static_path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -147,6 +156,7 @@ func GetListActors(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateActor(w http.ResponseWriter, r *http.Request) {
+
 	actor := &Actor{}
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
@@ -167,13 +177,15 @@ func CreateActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	resp, err := json.Marshal(CreatedId{Id: actor_id})
 
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		log.Printf("Error happened in JSON marshal. Err: %s", err)
 		return
 	}
+
+	w.WriteHeader(http.StatusCreated)
 	w.Write(resp)
 
 }

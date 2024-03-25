@@ -13,7 +13,7 @@ git clone https://github.com/KazakNi/vk_cinematheque.git
 ```
 cd vk_cinematheque
 ```
-Заполнить файл с переменными окружения
+Заполнить файл с переменными окружения .env
 
 Запустить docker-compose
 
@@ -22,6 +22,7 @@ docker-compose up
 ```
 
 Спецификация OpenAPI доступна по localhost:8080/redoc
+
 <div align="center">
   <img src="https://github.com/KazakNi/KazakNi/blob/main/swagger.png" align="center"> </img>
   </div>

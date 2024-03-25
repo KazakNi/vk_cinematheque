@@ -1,13 +1,12 @@
 package db
 
 import (
+	"cinematheque/internal/utils"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -80,31 +79,16 @@ GROUP BY a.name, a.sex, a.birth_date
 `
 
 func NewDBConnection() (*sqlx.DB, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	parent := filepath.Dir(wd)
+	host, port, user, password, dbname, driver := utils.GetEnv()
 
-	err = godotenv.Load(parent + "./.env")
-	if err != nil {
-		panic("Error loading .env file")
-	}
-
-	host := os.Getenv("HOST")
-	port := os.Getenv("PORT")
-	user := os.Getenv("USER")
-	password := os.Getenv("PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	driver := os.Getenv("DRIVER")
-
-	connUrl := fmt.Sprintf("host=%s port=%v user=%s "+
+	connUrl := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
+
 	db, err := sqlx.Connect(driver, connUrl)
 
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("%s, %s", err, connUrl))
 	}
 
 	err = db.Ping()

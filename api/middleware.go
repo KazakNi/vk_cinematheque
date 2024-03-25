@@ -18,11 +18,12 @@ func AuthRequiredCheck(next http.Handler) http.Handler {
 
 		if len(AuthHeader) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Error"))
+			w.Write([]byte("Auth required!"))
 			return
 		}
 
 		token := strings.Fields(AuthHeader)[1]
+
 		err := ParseToken(token)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
